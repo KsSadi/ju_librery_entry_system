@@ -17,7 +17,7 @@
   </div><!-- .main-area -->
 
 </div><!-- .page-wrapper -->
-<script src="/library_entry_system/assets/js/app.js"></script>
+<script src="<?= BASE ?>/assets/js/app.js"></script>
 </body>
 </html>
 

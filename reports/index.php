@@ -191,7 +191,7 @@ include '../includes/header.php';
 <div class="rp-header">
   <div>
     <div class="rp-breadcrumb">
-      <a href="/library_entry_system/dashboard.php">Dashboard</a>
+      <a href="<?= BASE ?>/dashboard.php">Dashboard</a>
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
       <span>Reports</span>
     </div>

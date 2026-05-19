@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             session_regenerate_id(true);
             $_SESSION['user_id'] = $user['id'];
-            redirect('/library_entry_system/dashboard.php');
+            redirect(BASE . '/dashboard.php');
         }
     } else {
         $err = 'Invalid email or password.';
@@ -569,7 +569,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="form-footer">
       New student?
-      <a href="/library_entry_system/auth/register.php">Create an account</a>
+      <a href="<?= BASE ?>/auth/register.php">Create an account</a>
     </div>
 
     <p class="copyright">&copy; <?= date('Y') ?> Jahangirnagar University Central Library. All rights reserved.</p>

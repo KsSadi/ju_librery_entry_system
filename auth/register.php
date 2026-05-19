@@ -1,6 +1,6 @@
 <?php
 require_once '../includes/functions.php';
-if (is_logged_in()) redirect('/library_entry_system/dashboard.php');
+if (is_logged_in()) redirect(BASE . '/dashboard.php');
 
 $err  = '';
 $done = false;
@@ -414,7 +414,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           Login access will be granted
         </div>
       </div>
-      <a href="/library_entry_system/auth/login.php" class="btn-register" style="display:block;text-decoration:none;line-height:normal;padding:12px;">
+      <a href="<?= BASE ?>/auth/login.php" class="btn-register" style="display:block;text-decoration:none;line-height:normal;padding:12px;">
         Go to Login Page
       </a>
     </div>
@@ -511,7 +511,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="form-footer">
       Already have an account?
-      <a href="/library_entry_system/auth/login.php">Sign in here</a>
+      <a href="<?= BASE ?>/auth/login.php">Sign in here</a>
     </div>
     <p class="copyright">&copy; <?= date('Y') ?> Jahangirnagar University Central Library</p>
 

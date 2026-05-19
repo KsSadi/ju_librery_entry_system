@@ -170,7 +170,7 @@ include '../includes/header.php';
 
   <!-- Breadcrumb + Title -->
   <div class="cp-breadcrumb">
-    <a href="/library_entry_system/dashboard.php">Dashboard</a>
+    <a href="<?= BASE ?>/dashboard.php">Dashboard</a>
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
     <span>Change Password</span>
   </div>
@@ -205,7 +205,7 @@ include '../includes/header.php';
         </div>
         <h3>Password Updated!</h3>
         <p>Your password has been changed successfully.<br>Use your new password the next time you sign in.</p>
-        <a href="/library_entry_system/dashboard.php" class="btn" style="display:inline-flex;">
+        <a href="<?= BASE ?>/dashboard.php" class="btn" style="display:inline-flex;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           Back to Dashboard
         </a>

@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $vals[] = $entry_type;
     $pdo->prepare($sql)->execute($vals);
     $new_id = (int)$pdo->lastInsertId();
-    redirect('/library_entry_system/entries/view.php?id=' . $new_id . '&saved=1');
+    redirect(BASE . '/entries/view.php?id=' . $new_id . '&saved=1');
 }
 
 include '../includes/header.php';
@@ -183,7 +183,7 @@ include '../includes/header.php';
 <div class="ef-alert">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
   <?= e($msg) ?>
-  <a href="/library_entry_system/entries/list.php">View All Entries →</a>
+  <a href="<?= BASE ?>/entries/list.php">View All Entries →</a>
 </div>
 <?php endif; ?>
 
@@ -195,7 +195,7 @@ include '../includes/header.php';
   <div class="ef-header">
     <div>
       <div class="ef-breadcrumb">
-        <a href="/library_entry_system/dashboard.php">Dashboard</a>
+        <a href="<?= BASE ?>/dashboard.php">Dashboard</a>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
         <span><?= $is_copy ? 'Copy Entry' : 'New Entry' ?></span>
       </div>
@@ -210,7 +210,7 @@ include '../includes/header.php';
       </div>
       <?php endif; ?>
     </div>
-    <a href="/library_entry_system/entries/list.php" class="btn secondary" style="margin-top:6px;font-size:13px;">
+    <a href="<?= BASE ?>/entries/list.php" class="btn secondary" style="margin-top:6px;font-size:13px;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
       All Entries
     </a>

@@ -19,7 +19,7 @@ function current_user(){
     return $cached;
 }
 
-function require_login(){ if (!is_logged_in()) redirect('/library_entry_system/auth/login.php'); }
+function require_login(){ if (!is_logged_in()) redirect(BASE . '/auth/login.php'); }
 
 function has_role($roles){
     $u = current_user();

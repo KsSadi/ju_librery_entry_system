@@ -78,7 +78,7 @@ if (isset($_GET['toggle'])) {
         if (!$chk->fetch()) { http_response_code(403); die('Access denied.'); }
     }    $pdo->prepare("UPDATE users SET status = IF(status='active','inactive','active') WHERE id=? AND id != ?")
         ->execute([$uid, $_SESSION['user_id']]);
-    redirect('/library_entry_system/admin/users.php');
+    redirect(BASE . '/admin/users.php');
 }
 
 // ── Load users (active/inactive only – pending/rejected handled in Approvals) ──
@@ -122,8 +122,8 @@ include '../includes/header.php';
       Create Departmental Admin or Departmental Student accounts for <strong><?= e($u['dept_name']) ?></strong>.
     <?php else: ?>
       Create Admin, Departmental Admin, or Departmental Student accounts directly.
-      Students may also <a href="/library_entry_system/auth/register.php" target="_blank">self-register</a>
-      and be approved via <a href="/library_entry_system/admin/approvals.php">Approvals</a>.
+      Students may also <a href="<?= BASE ?>/auth/register.php" target="_blank">self-register</a>
+      and be approved via <a href="<?= BASE ?>/admin/approvals.php">Approvals</a>.
     <?php endif; ?>
   </p>
   <form method="post">

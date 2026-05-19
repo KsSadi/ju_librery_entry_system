@@ -30,7 +30,7 @@ $pendingCount = $u ? pending_count() : 0;
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title><?= e($pageTitle) ?> — JU Library</title>
   <link rel="icon" type="image/png" href="https://upload.wikimedia.org/wikipedia/en/thumb/a/a9/Jahangirnagar_University_Logo.svg/1280px-Jahangirnagar_University_Logo.svg.png">
-  <link rel="stylesheet" href="/library_entry_system/assets/css/style.css">
+  <link rel="stylesheet" href="<?= BASE ?>/assets/css/style.css">
 </head>
 <body>
 <div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
@@ -51,7 +51,7 @@ $pendingCount = $u ? pending_count() : 0;
         <div class="sidebar-section-title">Main Menu</div>
         <nav class="sidebar-nav">
 
-          <a href="/library_entry_system/dashboard.php" class="<?= navActive($currentPath,'dashboard') ?>">
+          <a href="<?= BASE ?>/dashboard.php" class="<?= navActive($currentPath,'dashboard') ?>">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
               <polyline points="9 22 9 12 15 12 15 22"/>
@@ -59,7 +59,7 @@ $pendingCount = $u ? pending_count() : 0;
             Dashboard
           </a>
 
-          <a href="/library_entry_system/entries/create.php" class="<?= navActive($currentPath,'/entries/create') ?>">
+          <a href="<?= BASE ?>/entries/create.php" class="<?= navActive($currentPath,'/entries/create') ?>">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
               <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
@@ -68,7 +68,7 @@ $pendingCount = $u ? pending_count() : 0;
             New Entry
           </a>
 
-          <a href="/library_entry_system/entries/list.php" class="<?= $isEntries ? 'active' : '' ?>">
+          <a href="<?= BASE ?>/entries/list.php" class="<?= $isEntries ? 'active' : '' ?>">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
               <line x1="8" y1="18" x2="21" y2="18"/>
@@ -78,7 +78,7 @@ $pendingCount = $u ? pending_count() : 0;
           </a>
 
           <?php if ($u): ?>
-          <a href="/library_entry_system/reports/index.php" class="<?= navActive($currentPath,'reports') ?>">
+          <a href="<?= BASE ?>/reports/index.php" class="<?= navActive($currentPath,'reports') ?>">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="20" x2="18" y2="10"/>
               <line x1="12" y1="20" x2="12" y2="4"/>
@@ -90,7 +90,7 @@ $pendingCount = $u ? pending_count() : 0;
           <?php endif; ?>
 
           <?php if ($u && can_approve()): ?>
-          <a href="/library_entry_system/admin/approvals.php" class="<?= navActive($currentPath,'approvals') ?>">
+          <a href="<?= BASE ?>/admin/approvals.php" class="<?= navActive($currentPath,'approvals') ?>">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
               <circle cx="9" cy="7" r="4"/>
@@ -106,7 +106,7 @@ $pendingCount = $u ? pending_count() : 0;
           <?php endif; ?>
 
           <?php if ($u && in_array($u['role_name'], ['Admin', 'Departmental Admin'])): ?>
-          <a href="/library_entry_system/admin/users.php" class="<?= navActive($currentPath,'users') ?>">
+          <a href="<?= BASE ?>/admin/users.php" class="<?= navActive($currentPath,'users') ?>">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
               <circle cx="9" cy="7" r="4"/>
@@ -121,14 +121,14 @@ $pendingCount = $u ? pending_count() : 0;
       <div class="sidebar-section">
         <div class="sidebar-section-title">Account</div>
         <nav class="sidebar-nav">
-          <a href="/library_entry_system/auth/change_password.php" class="<?= navActive($currentPath,'change_password') ?>">
+          <a href="<?= BASE ?>/auth/change_password.php" class="<?= navActive($currentPath,'change_password') ?>">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="7.5" cy="15.5" r="5.5"/>
               <path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/>
             </svg>
             Change Password
           </a>
-          <a href="/library_entry_system/auth/logout.php" class="logout-link">
+          <a href="<?= BASE ?>/auth/logout.php" class="logout-link">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
               <polyline points="16 17 21 12 16 7"/>
@@ -169,7 +169,7 @@ $pendingCount = $u ? pending_count() : 0;
       <div class="topbar-right">
         <?php if($u): ?>
         <span class="topbar-badge"><?= e($u['role_name']) ?></span>
-        <a href="/library_entry_system/auth/logout.php" class="topbar-logout">
+        <a href="<?= BASE ?>/auth/logout.php" class="topbar-logout">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
             <polyline points="16 17 21 12 16 7"/>
