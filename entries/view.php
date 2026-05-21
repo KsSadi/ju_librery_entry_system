@@ -23,8 +23,9 @@ $logs->execute([$id]);
 $log_rows = $logs->fetchAll();
 
 $saved    = !empty($_GET['saved']);
-$et       = $r['entry_type'] ?? 'new_entry';
-$is_copy  = $et === 'copy_entry';
+$et          = $r['entry_type'] ?? 'new_entry';
+$is_copy     = $et === 'copy_entry';
+$is_edition  = $et === 'edition_entry';
 
 include '../includes/header.php';
 ?>
@@ -57,8 +58,9 @@ include '../includes/header.php';
   padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700;
 }
 .vp-et-badge svg { width: 12px; height: 12px; }
-.vp-et-new  { background: #f0fdf4; color: #15803d; border: 1.5px solid #86efac; }
-.vp-et-copy { background: #eff6ff; color: #1d4ed8; border: 1.5px solid #93c5fd; }
+.vp-et-new     { background: #f0fdf4; color: #15803d; border: 1.5px solid #86efac; }
+.vp-et-copy    { background: #eff6ff; color: #1d4ed8; border: 1.5px solid #93c5fd; }
+.vp-et-edition { background: #fefce8; color: #92400e; border: 1.5px solid #fde68a; }
 
 /* ── Action buttons row ── */
 .vp-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 6px; }
@@ -73,6 +75,8 @@ include '../includes/header.php';
 .vp-btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
 .vp-btn-copy   { background: #eff6ff; color: #1d4ed8; border: 1.5px solid #bfdbfe; }
 .vp-btn-copy:hover { background: #dbeafe; transform: translateY(-1px); }
+.vp-btn-edition    { background: #fefce8; color: #92400e; border: 1.5px solid #fde68a; }
+.vp-btn-edition:hover { background: #fef3c7; transform: translateY(-1px); }
 .vp-btn-secondary { background: #f1f5f9; color: #475569; border: 1.5px solid #e2e8f0; }
 .vp-btn-secondary:hover { background: #e2e8f0; transform: translateY(-1px); }
 
@@ -197,6 +201,11 @@ include '../includes/header.php';
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         Copy Entry
       </span>
+      <?php elseif ($is_edition): ?>
+      <span class="vp-et-badge vp-et-edition">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        Edition Entry
+      </span>
       <?php else: ?>
       <span class="vp-et-badge vp-et-new">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -210,6 +219,10 @@ include '../includes/header.php';
     <a href="<?= BASE ?>/entries/create.php?copy_from=<?= $r['id'] ?>" class="vp-btn vp-btn-copy">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
       Copy Entry
+    </a>
+    <a href="<?= BASE ?>/entries/create.php?edition_from=<?= $r['id'] ?>" class="vp-btn vp-btn-edition">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      Edition Entry
     </a>
     <?php endif; ?>
     <?php if (can_modify_entries()): ?>

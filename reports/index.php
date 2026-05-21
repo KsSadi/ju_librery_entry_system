@@ -33,20 +33,23 @@ if (is_admin()) {
 // ── Summary stats ─────────────────────────────────────────
 $qSum = $pdo->prepare("SELECT
     COUNT(*)                        AS total,
-    SUM(b.entry_type='new_entry')   AS new_entries,
-    SUM(b.entry_type='copy_entry')  AS copy_entries
+    SUM(b.entry_type='new_entry')     AS new_entries,
+    SUM(b.entry_type='copy_entry')    AS copy_entries,
+    SUM(b.entry_type='edition_entry') AS edition_entries
     FROM book_entries b $where");
 $qSum->execute($params);
 $sum = $qSum->fetch();
-$stat_total  = (int)$sum['total'];
-$stat_new    = (int)$sum['new_entries'];
-$stat_copy   = (int)$sum['copy_entries'];
+$stat_total    = (int)$sum['total'];
+$stat_new      = (int)$sum['new_entries'];
+$stat_copy     = (int)$sum['copy_entries'];
+$stat_edition  = (int)$sum['edition_entries'];
 
 // ── User-wise breakdown ────────────────────────────────────
 $qUser = $pdo->prepare("SELECT u.name, u.email,
     COUNT(b.id)                       total,
     SUM(b.entry_type='new_entry')     new_e,
-    SUM(b.entry_type='copy_entry')    copy_e
+    SUM(b.entry_type='copy_entry')    copy_e,
+    SUM(b.entry_type='edition_entry') edition_e
     FROM book_entries b
     JOIN users u ON b.created_by=u.id
     $where
@@ -60,7 +63,8 @@ if (!is_dept_student()) {
     $qDept = $pdo->prepare("SELECT d.name dept,
         COUNT(b.id)                       total,
         SUM(b.entry_type='new_entry')     new_e,
-        SUM(b.entry_type='copy_entry')    copy_e
+        SUM(b.entry_type='copy_entry')    copy_e,
+        SUM(b.entry_type='edition_entry') edition_e
         FROM book_entries b
         JOIN departments d ON b.department_id=d.id
         $where
@@ -74,7 +78,8 @@ $qDaily = $pdo->prepare("SELECT
     DATE(b.created_at)              day,
     COUNT(b.id)                     total,
     SUM(b.entry_type='new_entry')   new_e,
-    SUM(b.entry_type='copy_entry')  copy_e
+    SUM(b.entry_type='copy_entry')  copy_e,
+    SUM(b.entry_type='edition_entry') edition_e
     FROM book_entries b $where
     GROUP BY DATE(b.created_at) ORDER BY day ASC");
 $qDaily->execute($params);
@@ -122,7 +127,7 @@ include '../includes/header.php';
 .rp-filter-btn svg { width:14px; height:14px; }
 
 /* ── Summary stats ── */
-.rp-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:20px; }
+.rp-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin-bottom:20px; }
 .rp-stat {
   background:var(--white); border:1px solid var(--border); border-radius:var(--radius-lg);
   box-shadow:var(--shadow-sm); padding:20px 22px; display:flex; align-items:center; gap:16px;
@@ -132,6 +137,7 @@ include '../includes/header.php';
 .rp-stat-icon.total { background:rgba(26,87,54,.1); }
 .rp-stat-icon.green { background:rgba(34,197,94,.12); }
 .rp-stat-icon.blue  { background:rgba(59,130,246,.12); }
+.rp-stat-icon.amber { background:rgba(245,158,11,.12); }
 .rp-stat-number { font-size:32px; font-weight:900; line-height:1; color:var(--text); }
 .rp-stat-label  { font-size:12.5px; color:var(--text-muted); margin-top:3px; }
 .rp-stat-bar    { height:4px; border-radius:4px; margin-top:8px; }
@@ -157,6 +163,7 @@ include '../includes/header.php';
 .rp-badge svg { width:10px; height:10px; }
 .rp-b-new  { background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; }
 .rp-b-copy { background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; }
+.rp-b-edition { background:#fefce8; color:#92400e; border:1px solid #fde68a; }
 .rp-b-total{ background:#f1f5f9; color:#475569; border:1px solid #e2e8f0; }
 
 /* ── Progress bar in table ── */
@@ -169,6 +176,7 @@ include '../includes/header.php';
 .rp-trend-bars { display:flex; align-items:flex-end; gap:2px; width:100%; justify-content:center; }
 .rp-bar-new  { flex:1; background:#22c55e; border-radius:3px 3px 0 0; min-height:3px; }
 .rp-bar-copy { flex:1; background:#3b82f6; border-radius:3px 3px 0 0; min-height:3px; }
+.rp-bar-edition { flex:1; background:#f59e0b; border-radius:3px 3px 0 0; min-height:3px; }
 .rp-trend-date { font-size:10px; color:var(--text-muted); white-space:nowrap; }
 .rp-trend-legend { display:flex; gap:16px; padding:0 22px 14px; }
 .rp-trend-legend span { display:flex; align-items:center; gap:5px; font-size:12px; color:var(--text-muted); }
@@ -279,6 +287,18 @@ include '../includes/header.php';
       <?php endif; ?>
     </div>
   </div>
+  <div class="rp-stat">
+    <div class="rp-stat-icon amber">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+    </div>
+    <div style="flex:1;">
+      <div class="rp-stat-number" style="color:#92400e;"><?= $stat_edition ?></div>
+      <div class="rp-stat-label">Edition Entries</div>
+      <?php if ($stat_total > 0): ?>
+      <div class="rp-prog"><div class="rp-prog-fill" style="width:<?= round($stat_edition/$stat_total*100) ?>%;background:#f59e0b;"></div></div>
+      <?php endif; ?>
+    </div>
+  </div>
 </div>
 
 <!-- ── Daily Trend ── -->
@@ -300,14 +320,16 @@ include '../includes/header.php';
   <div class="rp-trend">
     <?php foreach ($dailyRows as $day): ?>
     <?php
-      $newH  = $day['total'] > 0 ? max(3, round($day['new_e']  / $maxDay * $maxBarH)) : 3;
-      $copyH = $day['total'] > 0 ? max(3, round($day['copy_e'] / $maxDay * $maxBarH)) : 3;
+      $newH  = $day['total'] > 0 ? max(3, round($day['new_e']     / $maxDay * $maxBarH)) : 3;
+      $copyH = $day['total'] > 0 ? max(3, round($day['copy_e']    / $maxDay * $maxBarH)) : 3;
+      $edH   = $day['total'] > 0 ? max(3, round($day['edition_e'] / $maxDay * $maxBarH)) : 3;
       $label = date('d M', strtotime($day['day']));
     ?>
-    <div class="rp-trend-col" title="<?= e($label) ?>: <?= $day['new_e'] ?> new, <?= $day['copy_e'] ?> copy">
+    <div class="rp-trend-col" title="<?= e($label) ?>: <?= $day['new_e'] ?> new, <?= $day['copy_e'] ?> copy, <?= $day['edition_e'] ?> edition">
       <div class="rp-trend-bars">
-        <div class="rp-bar-new"  style="height:<?= $newH  ?>px;"></div>
-        <div class="rp-bar-copy" style="height:<?= $copyH ?>px;"></div>
+        <div class="rp-bar-new"     style="height:<?= $newH  ?>px;"></div>
+        <div class="rp-bar-copy"    style="height:<?= $copyH ?>px;"></div>
+        <div class="rp-bar-edition" style="height:<?= $edH   ?>px;"></div>
       </div>
       <div class="rp-trend-date"><?= $label ?></div>
     </div>
@@ -316,6 +338,7 @@ include '../includes/header.php';
   <div class="rp-trend-legend">
     <span><i style="background:#22c55e;"></i> New Entry</span>
     <span><i style="background:#3b82f6;"></i> Copy Entry</span>
+    <span><i style="background:#f59e0b;"></i> Edition Entry</span>
   </div>
 </div>
 <?php endif; ?>
@@ -346,12 +369,17 @@ include '../includes/header.php';
         <th>Total</th>
         <th>New Entries</th>
         <th>Copy Entries</th>
+        <th>Edition Entries</th>
         <th>Breakdown</th>
       </tr>
     </thead>
     <tbody>
       <?php foreach ($userReport as $i => $row): ?>
-      <?php $pct = $row['total'] > 0 ? round($row['new_e']/$row['total']*100) : 0; ?>
+      <?php
+        $pNew = $row['total'] > 0 ? round($row['new_e']     /$row['total']*100) : 0;
+        $pCpy = $row['total'] > 0 ? round($row['copy_e']    /$row['total']*100) : 0;
+        $pEd  = $row['total'] > 0 ? round($row['edition_e'] /$row['total']*100) : 0;
+      ?>
       <tr>
         <td style="color:var(--text-muted);font-size:12px;"><?= $i+1 ?></td>
         <td><strong><?= e($row['name']) ?></strong></td>
@@ -359,12 +387,14 @@ include '../includes/header.php';
         <td><span class="rp-badge rp-b-total"><?= $row['total'] ?></span></td>
         <td><span class="rp-badge rp-b-new"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><?= $row['new_e'] ?></span></td>
         <td><span class="rp-badge rp-b-copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><?= $row['copy_e'] ?></span></td>
+        <td><span class="rp-badge rp-b-edition"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><?= $row['edition_e'] ?></span></td>
         <td style="min-width:120px;">
           <div style="display:flex;height:8px;border-radius:4px;overflow:hidden;background:#f1f5f9;">
-            <div style="width:<?= $pct ?>%;background:#22c55e;"></div>
-            <div style="width:<?= 100-$pct ?>%;background:#3b82f6;"></div>
+            <div style="width:<?= $pNew ?>%;background:#22c55e;"></div>
+            <div style="width:<?= $pCpy ?>%;background:#3b82f6;"></div>
+            <div style="width:<?= $pEd  ?>%;background:#f59e0b;"></div>
           </div>
-          <div style="font-size:10.5px;color:var(--text-muted);margin-top:3px;"><?= $pct ?>% new</div>
+          <div style="font-size:10.5px;color:var(--text-muted);margin-top:3px;"><?= $pNew ?>% new</div>
         </td>
       </tr>
       <?php endforeach; ?>
@@ -400,12 +430,17 @@ include '../includes/header.php';
         <th>Total</th>
         <th>New Entries</th>
         <th>Copy Entries</th>
+        <th>Edition Entries</th>
         <th>Breakdown</th>
       </tr>
     </thead>
     <tbody>
       <?php foreach ($deptReport as $i => $row): ?>
-      <?php $pct = $row['total'] > 0 ? round($row['new_e']/$row['total']*100) : 0; ?>
+      <?php
+        $pNew = $row['total'] > 0 ? round($row['new_e']     /$row['total']*100) : 0;
+        $pCpy = $row['total'] > 0 ? round($row['copy_e']    /$row['total']*100) : 0;
+        $pEd  = $row['total'] > 0 ? round($row['edition_e'] /$row['total']*100) : 0;
+      ?>
       <tr>
         <td style="color:var(--text-muted);font-size:12px;"><?= $i+1 ?></td>
         <td><strong><?= e($row['dept']) ?></strong></td>
@@ -417,12 +452,14 @@ include '../includes/header.php';
         </td>
         <td><span class="rp-badge rp-b-new"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><?= $row['new_e'] ?></span></td>
         <td><span class="rp-badge rp-b-copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><?= $row['copy_e'] ?></span></td>
+        <td><span class="rp-badge rp-b-edition"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><?= $row['edition_e'] ?></span></td>
         <td style="min-width:120px;">
           <div style="display:flex;height:8px;border-radius:4px;overflow:hidden;background:#f1f5f9;">
-            <div style="width:<?= $pct ?>%;background:#22c55e;"></div>
-            <div style="width:<?= 100-$pct ?>%;background:#3b82f6;"></div>
+            <div style="width:<?= $pNew ?>%;background:#22c55e;"></div>
+            <div style="width:<?= $pCpy ?>%;background:#3b82f6;"></div>
+            <div style="width:<?= $pEd  ?>%;background:#f59e0b;"></div>
           </div>
-          <div style="font-size:10.5px;color:var(--text-muted);margin-top:3px;"><?= $pct ?>% new</div>
+          <div style="font-size:10.5px;color:var(--text-muted);margin-top:3px;"><?= $pNew ?>% new</div>
         </td>
       </tr>
       <?php endforeach; ?>

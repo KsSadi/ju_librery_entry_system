@@ -19,22 +19,77 @@ if ($copy_from_id) {
     $is_copy = !empty($src);
 }
 
+// ── Auto-detect next copy number ─────────────────────
+$next_copy = 1;
+if ($is_copy && !empty($src['acc_no'])) {
+    $mc = $pdo->prepare("SELECT MAX(CAST(copy AS UNSIGNED)) FROM book_entries WHERE acc_no = ? AND status = 'active'");
+    $mc->execute([$src['acc_no']]);
+    $next_copy = (int)$mc->fetchColumn() + 1;
+}
+$copy_readonly = $is_copy && is_dept_student();
+
+// ── Edition / new-edition mode ───────────────────────────────
+$edition_from_id = (int)($_GET['edition_from'] ?? 0);
+$is_edition      = false;
+if (!$is_copy && $edition_from_id) {
+    $es = $pdo->prepare("SELECT * FROM book_entries WHERE id=? AND status='active'");
+    $es->execute([$edition_from_id]);
+    $esrc = $es->fetch() ?: [];
+    if (!empty($esrc)) { $src = $esrc; $is_edition = true; }
+}
+// Editable fields in edition mode: acc_no, edition, copy
+$edition_readonly = $is_edition && is_dept_student();
+$edition_editable = ['acc_no', 'edition', 'copy'];
+
+$error_msg = '';
+
 // helper – get prefill value for a field
 function prefill($field, $src) { return htmlspecialchars((string)($src[$field] ?? ''), ENT_QUOTES, 'UTF-8'); }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $dept       = can_enter_all() ? (int)($_POST['department_id'] ?? 0) : $u['department_id'];
-    $entry_type = ($_POST['entry_type'] ?? 'new_entry') === 'copy_entry' ? 'copy_entry' : 'new_entry';
+    $dept = can_enter_all() ? (int)($_POST['department_id'] ?? 0) : $u['department_id'];
+    if      ($is_copy)    $entry_type = 'copy_entry';
+    elseif  ($is_edition) $entry_type = 'edition_entry';
+    else                  $entry_type = ($_POST['entry_type'] ?? 'new_entry') === 'copy_entry' ? 'copy_entry' : 'new_entry';
     $cols = array_keys($fields);
     $sql  = 'INSERT INTO book_entries(' . implode(',', $cols) . ',department_id,created_by,entry_type) VALUES(' . str_repeat('?,', count($cols) + 2) . '?)';
     $vals = [];
-    foreach ($cols as $c) $vals[] = trim($_POST[$c] ?? '') ?: null;
-    $vals[] = $dept;
-    $vals[] = $u['id'];
-    $vals[] = $entry_type;
-    $pdo->prepare($sql)->execute($vals);
-    $new_id = (int)$pdo->lastInsertId();
-    redirect(BASE . '/entries/view.php?id=' . $new_id . '&saved=1');
+    if ($copy_readonly) {
+        // Use source values server-side; only override copy with next available number
+        foreach ($cols as $c) $vals[] = ($c === 'copy') ? (string)$next_copy : ($src[$c] ?? null);
+        $dept = (int)($src['department_id'] ?? $u['department_id']);
+    } elseif ($is_edition) {
+        // Editable: acc_no, edition, copy (from POST); rest from source
+        $new_vals = [];
+        foreach ($cols as $c) {
+            $new_vals[$c] = in_array($c, $edition_editable)
+                ? (trim($_POST[$c] ?? '') ?: null)
+                : ($src[$c] ?? null);
+        }
+        // Validate: at least one editable field must differ from source
+        $has_diff = false;
+        foreach ($edition_editable as $c) {
+            if ((string)($new_vals[$c] ?? '') !== (string)($src[$c] ?? '')) {
+                $has_diff = true; break;
+            }
+        }
+        if (!$has_diff) {
+            $error_msg = 'At least one field (Acc. No, Edition, or Copy) must be different from the source entry.';
+        } else {
+            foreach ($cols as $c) $vals[] = $new_vals[$c];
+            if ($edition_readonly) $dept = (int)($src['department_id'] ?? $u['department_id']);
+        }
+    } else {
+        foreach ($cols as $c) $vals[] = trim($_POST[$c] ?? '') ?: null;
+    }
+    if (!$error_msg && !empty($vals)) {
+        $vals[] = $dept;
+        $vals[] = $u['id'];
+        $vals[] = $entry_type;
+        $pdo->prepare($sql)->execute($vals);
+        $new_id = (int)$pdo->lastInsertId();
+        redirect(BASE . '/entries/view.php?id=' . $new_id . '&saved=1');
+    }
 }
 
 include '../includes/header.php';
@@ -175,6 +230,47 @@ include '../includes/header.php';
     .ef-section-body { padding: 16px; }
     .ef-actions { position: static; }
   }
+
+  /* ── Copy-readonly mode ── */
+  .copy-readonly-form input,
+  .copy-readonly-form textarea {
+    background: #f1f5f9 !important; color: #64748b !important;
+    cursor: default !important; border-color: #e2e8f0 !important;
+    pointer-events: none;
+  }
+  .copy-readonly-form select {
+    background: #f1f5f9 !important; color: #64748b !important;
+    cursor: default !important; border-color: #e2e8f0 !important;
+    pointer-events: none; opacity: 1;
+  }
+  .copy-readonly-form .ef-hint { display: none; }
+
+  /* ── Edition mode ── */
+  .edition-mode-form input[readonly],
+  .edition-mode-form textarea[readonly] {
+    background: #f1f5f9 !important; color: #64748b !important;
+    cursor: default !important; border-color: #e2e8f0 !important;
+  }
+  .edition-mode-form select:disabled {
+    background: #f1f5f9 !important; color: #64748b !important;
+    cursor: default !important; border-color: #e2e8f0 !important; opacity: 1;
+  }
+  /* Highlight the 3 editable fields */
+  .edition-mode-form input[name="acc_no"],
+  .edition-mode-form input[name="edition"],
+  .edition-mode-form input[name="copy"] {
+    background: #f0fdf4 !important; color: var(--text) !important;
+    border-color: var(--primary) !important; cursor: text !important;
+    pointer-events: auto;
+  }
+  .edition-mode-form .ef-hint { display: none; }
+  /* Error alert */
+  .ef-alert-error {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 18px; border-radius: 10px; margin-bottom: 20px;
+    background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; font-size: 13.5px;
+  }
+  .ef-alert-error svg { width: 20px; height: 20px; flex-shrink: 0; }
 </style>
 
 <div class="ef-page">
@@ -185,11 +281,16 @@ include '../includes/header.php';
   <?= e($msg) ?>
   <a href="<?= BASE ?>/entries/list.php">View All Entries →</a>
 </div>
+<?php endif; ?><?php if ($error_msg): ?>
+<div class="ef-alert-error">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+  <?= e($error_msg) ?>
+</div>
 <?php endif; ?>
-
-<form method="post" id="entryForm" autocomplete="off">
-<input type="hidden" name="entry_type" value="<?= $is_copy ? 'copy_entry' : 'new_entry' ?>">
+<form method="post" id="entryForm" autocomplete="off"<?= $copy_readonly ? ' class="copy-readonly-form"' : ($is_edition ? ' class="edition-mode-form"' : '') ?>>
+<input type="hidden" name="entry_type" value="<?= $is_copy ? 'copy_entry' : ($is_edition ? 'edition_entry' : 'new_entry') ?>">
 <?php if ($is_copy): ?><input type="hidden" name="copy_from" value="<?= (int)$copy_from_id ?>"><?php endif; ?>
+<?php if ($is_edition): ?><input type="hidden" name="edition_from" value="<?= (int)$edition_from_id ?>"><?php endif; ?>
 
   <!-- Page Header -->
   <div class="ef-header">
@@ -197,16 +298,23 @@ include '../includes/header.php';
       <div class="ef-breadcrumb">
         <a href="<?= BASE ?>/dashboard.php">Dashboard</a>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-        <span><?= $is_copy ? 'Copy Entry' : 'New Entry' ?></span>
+        <span><?= $is_copy ? 'Copy Entry' : ($is_edition ? 'Edition Entry' : 'New Entry') ?></span>
       </div>
       <div class="ef-page-title">
         <div class="ef-page-title-bar"></div>
-        <?= $is_copy ? 'Copy Book / Data Entry' : 'New Book / Data Entry' ?>
+        <?= $is_copy ? 'Copy Book / Data Entry' : ($is_edition ? 'New Edition Entry' : 'New Book / Data Entry') ?>
       </div>
       <?php if ($is_copy): ?>
       <div style="margin-top:6px;font-size:12.5px;color:#6b7280;display:flex;align-items:center;gap:6px;">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         Copying from entry <strong>#<?= (int)$copy_from_id ?></strong> &mdash; <em><?= e($src['acc_no'] ?? '') ?> <?= e($src['title'] ?? '') ?></em>
+        <?php if ($copy_readonly): ?>&nbsp;&nbsp;<span style="background:#dbeafe;color:#1d4ed8;padding:2px 9px;border-radius:99px;font-size:11.5px;font-weight:700;">Copy <?= (int)$next_copy ?> will be created</span><?php endif; ?>
+      </div>
+      <?php elseif ($is_edition): ?>
+      <div style="margin-top:6px;font-size:12.5px;color:#6b7280;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        New edition from entry <strong>#<?= (int)$edition_from_id ?></strong> &mdash; <em><?= e($src['acc_no'] ?? '') ?> <?= e($src['title'] ?? '') ?></em>
+        &nbsp;<span style="background:#fef3c7;color:#92400e;padding:2px 9px;border-radius:99px;font-size:11.5px;font-weight:700;">Acc. No / Edition / Copy editable</span>
       </div>
       <?php endif; ?>
     </div>
@@ -410,7 +518,7 @@ include '../includes/header.php';
         </div>
         <div class="ef-field">
           <label>Copy</label>
-          <input name="copy" placeholder="e.g. 1" value="<?= prefill('copy',$src) ?>">
+          <input name="copy" placeholder="e.g. 1" value="<?= $is_copy ? (int)$next_copy : ($is_edition ? '1' : prefill('copy',$src)) ?>">
         </div>
       </div>
     </div>
@@ -451,10 +559,12 @@ include '../includes/header.php';
       <?php endif; ?>
     </div>
     <div class="ef-actions-btns">
+      <?php if (!$copy_readonly && !$edition_readonly): ?>
       <button type="reset" class="ef-btn-reset">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
         Reset Form
       </button>
+      <?php endif; ?>
       <button type="submit" class="ef-btn-save">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
         Save Entry
@@ -462,6 +572,30 @@ include '../includes/header.php';
     </div>
   </div>
 
+<?php if ($copy_readonly): ?>
+<script>
+document.querySelectorAll('#entryForm input:not([type=hidden]),#entryForm textarea').forEach(function(el){el.setAttribute('readonly','');});
+document.querySelectorAll('#entryForm select').forEach(function(s){
+  s.setAttribute('disabled','');
+  var h=document.createElement('input');h.type='hidden';h.name=s.name;h.value=s.value;
+  s.parentNode.appendChild(h);
+});
+</script>
+<?php endif; ?>
+<?php if ($edition_readonly): ?>
+<script>
+var editionSkip=['acc_no','edition','copy'];
+document.querySelectorAll('#entryForm input:not([type=hidden])').forEach(function(el){
+  if(editionSkip.indexOf(el.name)===-1) el.setAttribute('readonly','');
+});
+document.querySelectorAll('#entryForm textarea').forEach(function(el){el.setAttribute('readonly','');});
+document.querySelectorAll('#entryForm select').forEach(function(s){
+  s.setAttribute('disabled','');
+  var h=document.createElement('input');h.type='hidden';h.name=s.name;h.value=s.value;
+  s.parentNode.appendChild(h);
+});
+</script>
+<?php endif; ?>
 </form>
 </div>
 

@@ -20,14 +20,16 @@ if ($u['role_name'] === 'Departmental Admin') {
 // ── Stats ────────────────────────────────────────────────
 $qSummary = $pdo->prepare("SELECT
     COUNT(*) total,
-    SUM(b.entry_type='new_entry')  new_entries,
-    SUM(b.entry_type='copy_entry') copy_entries
+    SUM(b.entry_type='new_entry')     new_entries,
+    SUM(b.entry_type='copy_entry')    copy_entries,
+    SUM(b.entry_type='edition_entry') edition_entries
     FROM book_entries b $where");
 $qSummary->execute($params);
 $summary = $qSummary->fetch();
-$total       = (int)$summary['total'];
-$newEntries  = (int)$summary['new_entries'];
-$copyEntries = (int)$summary['copy_entries'];
+$total          = (int)$summary['total'];
+$newEntries     = (int)$summary['new_entries'];
+$copyEntries    = (int)$summary['copy_entries'];
+$editionEntries = (int)$summary['edition_entries'];
 
 $todayParams = array_merge($params);
 $andOr  = $where ? 'AND' : 'WHERE';
@@ -94,6 +96,20 @@ include 'includes/header.php';
     <div class="stat-info">
       <h2><?= $copyEntries ?></h2>
       <p>Copy Entries</p>
+    </div>
+  </div>
+
+  <!-- Edition Entries -->
+  <div class="stat-card" style="border-left:4px solid #f59e0b;">
+    <div class="stat-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-width="2">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+      </svg>
+    </div>
+    <div class="stat-info">
+      <h2><?= $editionEntries ?></h2>
+      <p>Edition Entries</p>
     </div>
   </div>
 
