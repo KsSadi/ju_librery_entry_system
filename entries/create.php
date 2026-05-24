@@ -55,8 +55,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $sql  = 'INSERT INTO book_entries(' . implode(',', $cols) . ',department_id,created_by,entry_type) VALUES(' . str_repeat('?,', count($cols) + 2) . '?)';
     $vals = [];
     if ($copy_readonly) {
-        // Use source values server-side; only override copy with next available number
-        foreach ($cols as $c) $vals[] = ($c === 'copy') ? (string)$next_copy : ($src[$c] ?? null);
+        // acc_no from POST (editable); copy = next auto number; rest from source
+        foreach ($cols as $c) {
+            if ($c === 'copy')   $vals[] = (string)$next_copy;
+            elseif ($c === 'acc_no') $vals[] = trim($_POST['acc_no'] ?? '') ?: ($src['acc_no'] ?? null);
+            else    $vals[] = $src[$c] ?? null;
+        }
         $dept = (int)($src['department_id'] ?? $u['department_id']);
     } elseif ($is_edition) {
         // Editable: acc_no, edition, copy (from POST); rest from source
@@ -232,8 +236,8 @@ include '../includes/header.php';
   }
 
   /* ── Copy-readonly mode ── */
-  .copy-readonly-form input,
-  .copy-readonly-form textarea {
+  .copy-readonly-form input[readonly],
+  .copy-readonly-form textarea[readonly] {
     background: #f1f5f9 !important; color: #64748b !important;
     cursor: default !important; border-color: #e2e8f0 !important;
     pointer-events: none;
@@ -242,6 +246,12 @@ include '../includes/header.php';
     background: #f1f5f9 !important; color: #64748b !important;
     cursor: default !important; border-color: #e2e8f0 !important;
     pointer-events: none; opacity: 1;
+  }
+  /* acc_no is editable in copy mode */
+  .copy-readonly-form input[name="acc_no"] {
+    background: #f0fdf4 !important; color: var(--text) !important;
+    border-color: var(--primary) !important; cursor: text !important;
+    pointer-events: auto;
   }
   .copy-readonly-form .ef-hint { display: none; }
 
@@ -574,7 +584,7 @@ include '../includes/header.php';
 
 <?php if ($copy_readonly): ?>
 <script>
-document.querySelectorAll('#entryForm input:not([type=hidden]),#entryForm textarea').forEach(function(el){el.setAttribute('readonly','');});
+document.querySelectorAll('#entryForm input:not([type=hidden]):not([name="acc_no"]),#entryForm textarea').forEach(function(el){el.setAttribute('readonly','');});
 document.querySelectorAll('#entryForm select').forEach(function(s){
   s.setAttribute('disabled','');
   var h=document.createElement('input');h.type='hidden';h.name=s.name;h.value=s.value;
